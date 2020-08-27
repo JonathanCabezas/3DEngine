@@ -15,9 +15,18 @@ class Video3DEngine : public GameEngine {
         Mesh mesh;
         Mat4x4 matWorld, matRotX, matRotZ, matTrans, matProj;
 
+        // Camera
         Vec3d vCamera;
         Vec3d vLookDir;
-        Vec3d vel;
+        Vec3d vForward;
+        Vec3d vVel;
+
+        // Movement
+        float fYaw;
+        float fYawVel;
+        float fForwardSpeed;
+        float fYawSpeed;
+        float fLateralSpeed;
 
         // Projection Matrix
         float fFovDegrees;
@@ -36,8 +45,16 @@ class Video3DEngine : public GameEngine {
 
             fTheta = 0.0f;
 
-            mesh.LoadFromObjectFile("models/teapot.obj");
+            mesh.LoadFromObjectFile("models/axis.obj");
 
+            // Initializing Movement
+            fYaw = 0.0f;
+            fYawVel = 0.0f;
+            fForwardSpeed = 8.0f;
+            fYawSpeed = 2.0f;
+            fLateralSpeed = 8.0f;
+
+            // Initializing Camera and Projection
             vCamera = { 0.0f, 0.0f, 0.0f };
             vLookDir = { 0.0f, 0.0f, 1.0f };
             matProj = Mat4x4::MakeProjection(fFovDegrees, fAspectRatio, fNear, fFar);
@@ -48,16 +65,29 @@ class Video3DEngine : public GameEngine {
         bool OnKeyPressed(SDL_Keycode kc) {
             switch(kc) {
                 case SDLK_LEFT:
-                    vel.x -= 1;
+                    vVel.x = fLateralSpeed;
                     break;
                 case SDLK_RIGHT:
-                    vel.x += 1;
+                    vVel.x = -fLateralSpeed;
                     break;
                 case SDLK_UP:
-                    vel.y -= 1;
+                    vVel.y = fLateralSpeed;
                     break;
                 case SDLK_DOWN:
-                    vel.y += 1;
+                    vVel.y = -fLateralSpeed;
+                    break;
+
+                case SDLK_z:
+                    vVel.z = fForwardSpeed;
+                    break;
+                case SDLK_s:
+                    vVel.z = -fForwardSpeed;
+                    break;
+                case SDLK_q:
+                    fYawVel = -fYawSpeed;
+                    break;
+                case SDLK_d:
+                    fYawVel = fYawSpeed;
                     break;
                 default:
                     break;
@@ -69,20 +99,29 @@ class Video3DEngine : public GameEngine {
         bool OnKeyReleased(SDL_Keycode kc) {
             switch(kc) {
                 case SDLK_LEFT:
-                    if (vel.x < 0)
-                        vel.x = 0;
+                    vVel.x = 0;
                     break;
                 case SDLK_RIGHT:
-                    if (vel.x > 0)
-                        vel.x = 0;
+                    vVel.x = 0;
                     break;
                 case SDLK_UP:
-                    if (vel.y < 0)
-                        vel.y = 0;
+                    vVel.y = 0;
                     break;
                 case SDLK_DOWN:
-                    if (vel.y > 0)
-                        vel.y = 0;
+                    vVel.y = 0;
+                    break;
+                    
+                case SDLK_z:
+                    vVel.z = 0;
+                    break;
+                case SDLK_s:
+                    vVel.z = 0;
+                    break;
+                case SDLK_q:
+                    fYawVel = 0;
+                    break;
+                case SDLK_d:
+                    fYawVel = 0;
                     break;
                 default:
                     break;
@@ -93,21 +132,25 @@ class Video3DEngine : public GameEngine {
 
         bool OnUpdate(float fElapsedTime) override {
                 // Move camera
-                vCamera.x += vel.x * fElapsedTime;
-                vCamera.y += vel.y * fElapsedTime;
-                vCamera.z += vel.z * fElapsedTime;
+                vCamera.x += vVel.x * fElapsedTime;
+                vCamera.y += vVel.y * fElapsedTime;
+                vCamera.z += vVel.z * fElapsedTime;
+                fYaw += fYawVel * fElapsedTime;
 
                 renderer.Fill(BLACK);
 
-                fTheta += 1.0f * fElapsedTime;
+                //fTheta += 1.0f * fElapsedTime;
 
                 matRotX = Mat4x4::MakeRotationX(fTheta * 0.5f);
                 matRotZ = Mat4x4::MakeRotationZ(fTheta);
                 matTrans = Mat4x4::MakeTranslation(0.0f, 0.0f, 8.0f);
                 matWorld = matRotZ * matRotX * matTrans;
                 
-                Vec3d vUp = { 0.0f, 1.0f, 0.0f };
-                Vec3d vTarget = vCamera + vLookDir;
+                Vec3d vUp = { 0, 1, 0 };
+                Vec3d vTarget = { 0, 0, 1 };
+                Mat4x4 matCameraRot = Mat4x4::MakeRotationY(fYaw);
+                vLookDir = matCameraRot * vTarget;
+                vTarget = vCamera + vLookDir;
 
                 Mat4x4 matCamera = Mat4x4::PointAt(vCamera, vTarget, vUp);
 
@@ -118,7 +161,7 @@ class Video3DEngine : public GameEngine {
                 std::vector<std::pair<Vec3d, Vec3d>> linesToDraw;
 
                 // Drawing axis
-                float axisLength = 100000.0f;
+                float axisLength = 1.0f;
                 Vec3d origin = { 0.0f, 0.0f, 0.0f };
                 Vec3d xDir = { 1.0f, 0.0f, 0.0f };
                 Vec3d yDir = { 0.0f, 1.0f, 0.0f };
@@ -148,10 +191,10 @@ class Video3DEngine : public GameEngine {
                         //linesToDraw.push_back({ p1, p2 });
 
                         // Illumination
-                        Vec3d light_direction = { 0.0f, 0.0f, -1.0f };
+                        Vec3d light_direction = { 0.0f, 1.0f, -1.0f };
                         light_direction.normalize();
                         
-                        float dp = normal.dot(light_direction);
+                        float dp = std::max(0.1f, normal.dot(light_direction));
                         int b = dp * 255 + 0.5f; // brightness
 
                         uint32_t shade = (b << 16) + (b << 8) + b;
@@ -182,7 +225,7 @@ class Video3DEngine : public GameEngine {
                     triangle.p[2] /= triangle.p[2].w;
 
 					// X/Y are inverted so put them back
-                    triangle *= { -1.0f, -1.0f, 0.0f };
+                    //triangle *= { -1.0f, -1.0f, 0.0f };
 
                     // Scale into view
                     triangle += Vec3d(1.0f, 1.0f, 0.0f);
@@ -199,8 +242,8 @@ class Video3DEngine : public GameEngine {
 
                     // Convert World Space --> View Space
                     p1 = matView * p1;
-                    p2 = matView * p2;
-
+                    p2 = matView * p2; 
+ 
                     // Projecting into 2D View
                     p1 = matProj * p1;
                     p2 = matProj * p2;
@@ -208,8 +251,8 @@ class Video3DEngine : public GameEngine {
                     p2 /= p2.w;
 
 					// X/Y are inverted so put them back
-                    p1 *= { -1.0f, -1.0f, 0.0f };
-                    p2 *= { -1.0f, -1.0f, 0.0f };
+                    //p1 *= { -1.0f, -1.0f, 0.0f };
+                    //p2 *= { -1.0f, -1.0f, 0.0f };
 
                     // Scale into view
                     p1 += Vec3d(1.0f, 1.0f, 0.0f);
@@ -217,7 +260,7 @@ class Video3DEngine : public GameEngine {
                     p1 *= Vec3d(0.5f * (float) WIDTH, 0.5f * (float) HEIGHT, 1.0f);
                     p2 *= Vec3d(0.5f * (float) WIDTH, 0.5f * (float) HEIGHT, 1.0f);
 
-                    //renderer.DrawLine(p1, p2, GREEN);
+                    renderer.DrawLine(p1, p2, GREEN);
                 }
 
             return true;

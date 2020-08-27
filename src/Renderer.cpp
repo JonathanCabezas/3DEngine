@@ -40,8 +40,8 @@ struct Renderer {
         int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
         int x1 = p1.x;
         int x2 = p2.x;
-        int y1 = p1.y;
-        int y2 = p2.y;
+        int y1 = height - p1.y;
+        int y2 = height - p2.y;
 
         dx = x2 - x1; dy = y2 - y1;
         dx1 = abs(dx); dy1 = abs(dy);
@@ -132,9 +132,9 @@ struct Renderer {
         int x1 = tri.p[0].x;
         int x2 = tri.p[1].x;
         int x3 = tri.p[2].x;
-        int y1 = tri.p[0].y;
-        int y2 = tri.p[1].y;
-        int y3 = tri.p[2].y;
+        int y1 = height - tri.p[0].y;
+        int y2 = height - tri.p[1].y;
+        int y3 = height - tri.p[2].y;
         // Sort vertices
         if (y1>y2) { SWAP(y1, y2); SWAP(x1, x2); }
         if (y1>y3) { SWAP(y1, y3); SWAP(x1, x3); }
