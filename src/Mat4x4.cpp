@@ -5,15 +5,15 @@
 #include "Vec3d.cpp"
 
 struct Mat4x4 {
-    float m[4][4] = { 0.0f };
+    float m[4][4] = { 0 };
 
     static Mat4x4 MakeIdentity() {
         Mat4x4 mat;
 
-        mat.m[0][0] = 1.0f;
-        mat.m[1][1] = 1.0f;
-        mat.m[2][2] = 1.0f;
-        mat.m[3][3] = 1.0f;
+        mat.m[0][0] = 1;
+        mat.m[1][1] = 1;
+        mat.m[2][2] = 1;
+        mat.m[3][3] = 1;
 
         return mat;
     }
@@ -21,12 +21,12 @@ struct Mat4x4 {
     static Mat4x4 MakeRotationX(float fAngleRad) {
         Mat4x4 mat;
 
-        mat.m[0][0] = 1.0f;
+        mat.m[0][0] = 1;
         mat.m[1][1] = cosf(fAngleRad);
         mat.m[1][2] = sinf(fAngleRad);
         mat.m[2][1] = -sinf(fAngleRad);
         mat.m[2][2] = cosf(fAngleRad);
-        mat.m[3][3] = 1.0f;
+        mat.m[3][3] = 1;
 
         return mat;
     }
@@ -36,10 +36,10 @@ struct Mat4x4 {
 
         mat.m[0][0] = cosf(fAngleRad);
         mat.m[0][2] = sinf(fAngleRad);
-        mat.m[1][1] = 1.0f;
+        mat.m[1][1] = 1;
         mat.m[2][0] = -sinf(fAngleRad);
         mat.m[2][2] = cosf(fAngleRad);
-        mat.m[3][3] = 1.0f;
+        mat.m[3][3] = 1;
 
         return mat;
     }
@@ -51,8 +51,8 @@ struct Mat4x4 {
         mat.m[0][1] = sinf(fAngleRad); // switch both signs there
         mat.m[1][0] = -sinf(fAngleRad);
         mat.m[1][1] = cosf(fAngleRad);
-        mat.m[2][2] = 1.0f;
-        mat.m[3][3] = 1.0f;
+        mat.m[2][2] = 1;
+        mat.m[3][3] = 1;
 
         return mat;
     }
@@ -60,10 +60,10 @@ struct Mat4x4 {
     static Mat4x4 MakeTranslation(float x, float y, float z) {
         Mat4x4 mat;
 
-        mat.m[0][0] = 1.0f;
-        mat.m[1][1] = 1.0f;
-        mat.m[2][2] = 1.0f;
-        mat.m[3][3] = 1.0f;
+        mat.m[0][0] = 1;
+        mat.m[1][1] = 1;
+        mat.m[2][2] = 1;
+        mat.m[3][3] = 1;
         mat.m[3][0] = x;
         mat.m[3][1] = y;
         mat.m[3][2] = z;
@@ -74,13 +74,13 @@ struct Mat4x4 {
     static Mat4x4 MakeProjection(float fFovDegrees, float fAspectRatio, float fNear, float fFar) {
         Mat4x4 mat;
 
-        float fFovRad = 1.0f / tanf(fFovDegrees * 0.5f / 180.0f * 3.14159f);
+        float fFovRad = 1.0 / tanf(fFovDegrees * 0.5 / 180.0 * 3.14159);
 
         mat.m[0][0] = fAspectRatio * fFovRad;
         mat.m[1][1] = fFovRad;
         mat.m[2][2] = fFar / (fFar - fNear);
         mat.m[3][2] = (-fFar * fNear) / (fFar - fNear);
-        mat.m[2][3] = 1.0f;
+        mat.m[2][3] = 1.0;
 
         return mat;
     }
@@ -116,7 +116,7 @@ struct Mat4x4 {
 		mat.m[3][0] = pos.x;
         mat.m[3][1] = pos.y;
         mat.m[3][2] = pos.z;
-        mat.m[3][3] = 1.0f;
+        mat.m[3][3] = 1;
 
 		return mat;
     }
@@ -140,7 +140,7 @@ struct Mat4x4 {
 		mat.m[3][0] = -(m.m[3][0] * mat.m[0][0] + m.m[3][1] * mat.m[1][0] + m.m[3][2] * mat.m[2][0]);
 		mat.m[3][1] = -(m.m[3][0] * mat.m[0][1] + m.m[3][1] * mat.m[1][1] + m.m[3][2] * mat.m[2][1]);
 		mat.m[3][2] = -(m.m[3][0] * mat.m[0][2] + m.m[3][1] * mat.m[1][2] + m.m[3][2] * mat.m[2][2]);
-        mat.m[3][3] = 1.0f;
+        mat.m[3][3] = 1;
 
 		return mat;
 	}

@@ -7,15 +7,15 @@ struct Vec3d {
     float x, y, z, w;
 
     Vec3d() {
-        x = y = z = 0.0f;
-        w = 1.0f;
+        x = y = z = 0;
+        w = 1;
     }
 
     Vec3d(float a, float b, float c) {
         x = a;
         y = b;
         z = c;
-        w = 1.0f;
+        w = 1;
     }
 
     float length() const {
@@ -25,7 +25,7 @@ struct Vec3d {
     Vec3d normalized() const {
         float l = length();
 
-        if (l != 0.0f)
+        if (l != 0)
             return *this / l;
 
         return *this;
@@ -34,7 +34,7 @@ struct Vec3d {
     void normalize() {
         float l = length();
 
-        if (l != 0.0f) {
+        if (l != 0) {
             x /= l;
             y /= l;
             z /= l;

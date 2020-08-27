@@ -251,8 +251,8 @@ class Video3DEngine : public GameEngine {
                     p2 /= p2.w;
 
 					// X/Y are inverted so put them back
-                    //p1 *= { -1.0f, -1.0f, 0.0f };
-                    //p2 *= { -1.0f, -1.0f, 0.0f };
+                    //p1 *= { -1, -1, 0 };
+                    //p2 *= { -1, -1, 0 };
 
                     // Scale into view
                     p1 += Vec3d(1, 1, 0);
