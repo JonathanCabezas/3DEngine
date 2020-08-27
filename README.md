@@ -1,6 +1,8 @@
-# Another 3DEngine
+# Another 3D Engine
 
-A 3D Game Engine inspired by javidx9 tutorial on YouTube
+A 3D Engine inspired by [javidx9 tutorial on YouTube][1]
+
+[1]:https://www.youtube.com/watch?v=ih20l3pJoeU&t=1367s
 
 ***
 
