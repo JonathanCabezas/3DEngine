@@ -9,9 +9,17 @@
 
 struct Renderer {
     SDL_Renderer* renderer;
+    int width;
+    int height;
 
     Renderer() {
         renderer = NULL;
+    }
+
+    Renderer (SDL_Renderer* r, int w, int h) {
+        renderer = r;
+        width = w;
+        height = h;
     }
 
     void HexToRGB(uint32_t &hex, uint8_t &r, uint8_t &g, uint8_t &b) {
@@ -98,6 +106,11 @@ struct Renderer {
         DrawLine(tri.p[0], tri.p[1]);
         DrawLine(tri.p[1], tri.p[2]);
         DrawLine(tri.p[2], tri.p[0]);
+    }
+
+    void FillTriangle(Triangle tri, uint32_t col) {
+        tri.col = col;
+        FillTriangle(tri);
     }
 
     void FillTriangle(Triangle tri) {

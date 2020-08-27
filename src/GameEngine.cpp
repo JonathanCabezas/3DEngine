@@ -29,13 +29,14 @@ class GameEngine {
 
         }
 
-        virtual bool OnCreate()							= 0;
-        virtual bool OnUpdate(float fElapsedTime)		= 0;	
+        virtual bool OnCreate()						                	= 0;
+        virtual bool OnKeyPressed(SDL_Keycode kc)	                    = 0;	
+        virtual bool OnKeyReleased(SDL_Keycode kc)	                    = 0;	
+        virtual bool OnUpdate(float fElapsedTime)		                = 0;	
 
         bool CreateWindow(const char* title, int width, int height) {
-
             if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-                fprintf(stdout,"Échec de l'initialisation de la SDL (%s)\n",SDL_GetError());
+                fprintf(stderr,"Échec de l'initialisation de la SDL (%s)\n",SDL_GetError());
                 return -1;
             }
 
@@ -56,7 +57,7 @@ class GameEngine {
                 fprintf(stderr,"Erreur de création du moteur de rendu: %s\n",SDL_GetError());
             }
 
-            renderer.renderer = SDL_renderer;
+            renderer = Renderer(SDL_renderer, width, height);
 
             return 1;
         }
@@ -72,23 +73,28 @@ class GameEngine {
             SDL_Event event;
 
             while(running) {
+                Uint32 current = SDL_GetTicks();
+                float fElapsedTime = (current - lastUpdate) / 1000.0f;
+
                 while (SDL_PollEvent(&event)) {
-                    if (event.type == SDL_QUIT) {
-                        running = false;
+                    switch (event.type) {
+                        case SDL_KEYDOWN:
+                            OnKeyPressed(event.key.keysym.sym);
+                            break;
+                        case SDL_KEYUP:
+                            OnKeyReleased(event.key.keysym.sym);
+                            break;
+                        case SDL_QUIT:
+                            running = false;
+                            break;
                     }
                 }
-                Uint32 current = SDL_GetTicks();
-
-                float fElapsedTime = (current - lastUpdate) / 1000.0f;
 
                 if (!OnUpdate(fElapsedTime)) {
                     running = false;
                 }
 
-                // Up until now everything was drawn behind the scenes.
-                // This will show the new, red contents of the window.
                 SDL_RenderPresent(SDL_renderer);
-                // Set updated time
                 lastUpdate = current;
             }
 

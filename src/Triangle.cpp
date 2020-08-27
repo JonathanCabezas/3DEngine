@@ -21,6 +21,8 @@ struct Triangle {
 
     Triangle operator +(const Vec3d& b) const {
         Triangle r;
+
+        r.col = col;
         r.p[0] = p[0] + b;
         r.p[1] = p[1] + b;
         r.p[2] = p[2] + b;
@@ -53,6 +55,16 @@ struct Triangle {
         normal.normalize();
 
         return normal;
+    }
+
+    Vec3d center() const {
+        Vec3d r;
+
+        r.x = (p[0].x + p[1].x + p[2].x) / 3;
+        r.y = (p[0].y + p[1].y + p[2].y) / 3;
+        r.z = (p[0].z + p[1].z + p[2].z) / 3;
+
+        return r;
     }
 };
 

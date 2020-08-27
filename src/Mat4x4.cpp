@@ -48,8 +48,8 @@ struct Mat4x4 {
         Mat4x4 mat;
 
         mat.m[0][0] = cosf(fAngleRad);
-        mat.m[0][1] = -sinf(fAngleRad);
-        mat.m[1][0] = sinf(fAngleRad);
+        mat.m[0][1] = sinf(fAngleRad); // switch both signs there
+        mat.m[1][0] = -sinf(fAngleRad);
         mat.m[1][1] = cosf(fAngleRad);
         mat.m[2][2] = 1.0f;
         mat.m[3][3] = 1.0f;
@@ -85,7 +85,67 @@ struct Mat4x4 {
         return mat;
     }
 
-    Mat4x4 operator*(const Mat4x4& b) const {
+    static Mat4x4 PointAt(const Vec3d &pos, const Vec3d &target, const Vec3d up) {
+        // Calculate new Forward direction
+        Vec3d newForward = target - pos;
+        newForward.normalize();
+
+        // Calculate new Up direction
+        Vec3d a = newForward * up.dot(newForward);
+        Vec3d newUp = up - a;
+        newUp.normalize();
+
+        // New Right direction is easy, its just cross product
+		Vec3d newRight = newUp.cross(newForward);
+
+        // Construct Dimensioning and Translation Matrix	
+		Mat4x4 mat;
+
+		mat.m[0][0] = newRight.x;
+        mat.m[0][1] = newRight.y;
+        mat.m[0][2] = newRight.z;
+
+		mat.m[1][0] = newUp.x;
+        mat.m[1][1] = newUp.y;
+        mat.m[1][2] = newUp.z;
+
+		mat.m[2][0] = newForward.x;
+        mat.m[2][1] = newForward.y;
+        mat.m[2][2] = newForward.z;
+
+		mat.m[3][0] = pos.x;
+        mat.m[3][1] = pos.y;
+        mat.m[3][2] = pos.z;
+        mat.m[3][3] = 1.0f;
+
+		return mat;
+    }
+
+    static Mat4x4 QuickInverse(Mat4x4 &m) // Only for Rotation/Translation Matrices
+	{
+		Mat4x4 mat;
+
+		mat.m[0][0] = m.m[0][0];
+        mat.m[0][1] = m.m[1][0];
+        mat.m[0][2] = m.m[2][0];
+
+		mat.m[1][0] = m.m[0][1];
+        mat.m[1][1] = m.m[1][1];
+        mat.m[1][2] = m.m[2][1];
+
+		mat.m[2][0] = m.m[0][2];
+        mat.m[2][1] = m.m[1][2];
+        mat.m[2][2] = m.m[2][2];
+
+		mat.m[3][0] = -(m.m[3][0] * mat.m[0][0] + m.m[3][1] * mat.m[1][0] + m.m[3][2] * mat.m[2][0]);
+		mat.m[3][1] = -(m.m[3][0] * mat.m[0][1] + m.m[3][1] * mat.m[1][1] + m.m[3][2] * mat.m[2][1]);
+		mat.m[3][2] = -(m.m[3][0] * mat.m[0][2] + m.m[3][1] * mat.m[1][2] + m.m[3][2] * mat.m[2][2]);
+        mat.m[3][3] = 1.0f;
+
+		return mat;
+	}
+
+    Mat4x4 operator *(const Mat4x4& b) const {
         Mat4x4 mat;
 
         for (int i = 0; i < 4; ++i)
@@ -96,7 +156,7 @@ struct Mat4x4 {
         return mat;
     }
 
-    Vec3d operator* (const Vec3d& b) const {
+    Vec3d operator * (const Vec3d& b) const {
         Vec3d r;
 
         r.x = b.x * m[0][0] + b.y * m[1][0] + b.z * m[2][0] + m[3][0];
@@ -107,9 +167,10 @@ struct Mat4x4 {
         return r;
     }
 
-    Triangle operator* (const Triangle& b) const {
+    Triangle operator * (const Triangle& b) const {
         Triangle r;
 
+        r.col = b.col;
         r.p[0] = *this * b.p[0];
         r.p[1] = *this * b.p[1];
         r.p[2] = *this * b.p[2];
