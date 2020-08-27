@@ -38,25 +38,25 @@ class Video3DEngine : public GameEngine {
 
     public:
         bool OnCreate() override {
-            fFovDegrees = 90.0f;
+            fFovDegrees = 90;
             fAspectRatio = (float) HEIGHT / (float) WIDTH;
-            fNear = 0.1f;
-            fFar = 1000.0f;
+            fNear = 0;
+            fFar = 1000;
 
-            fTheta = 0.0f;
+            fTheta = 0;
 
             mesh.LoadFromObjectFile("models/axis.obj");
 
             // Initializing Movement
-            fYaw = 0.0f;
-            fYawVel = 0.0f;
-            fForwardSpeed = 8.0f;
-            fYawSpeed = 2.0f;
-            fLateralSpeed = 8.0f;
+            fYaw = 0;
+            fYawVel = 0;
+            fForwardSpeed = 8;
+            fYawSpeed = 2;
+            fLateralSpeed = 8;
 
             // Initializing Camera and Projection
-            vCamera = { 0.0f, 0.0f, 0.0f };
-            vLookDir = { 0.0f, 0.0f, 1.0f };
+            vCamera = { 0, 0, 0 };
+            vLookDir = { 0, 0, 1 };
             matProj = Mat4x4::MakeProjection(fFovDegrees, fAspectRatio, fNear, fFar);
 
             return true;
@@ -134,16 +134,16 @@ class Video3DEngine : public GameEngine {
                 // Move camera
                 vCamera.x += vVel.x * fElapsedTime;
                 vCamera.y += vVel.y * fElapsedTime;
-                vCamera.z += vVel.z * fElapsedTime;
+                vCamera += vLookDir * vVel.z * fElapsedTime;
                 fYaw += fYawVel * fElapsedTime;
 
                 renderer.Fill(BLACK);
 
-                //fTheta += 1.0f * fElapsedTime;
+                //fTheta += 1 * fElapsedTime;
 
-                matRotX = Mat4x4::MakeRotationX(fTheta * 0.5f);
+                matRotX = Mat4x4::MakeRotationX(fTheta * 0);
                 matRotZ = Mat4x4::MakeRotationZ(fTheta);
-                matTrans = Mat4x4::MakeTranslation(0.0f, 0.0f, 8.0f);
+                matTrans = Mat4x4::MakeTranslation(0, 0, 8);
                 matWorld = matRotZ * matRotX * matTrans;
                 
                 Vec3d vUp = { 0, 1, 0 };
@@ -161,11 +161,11 @@ class Video3DEngine : public GameEngine {
                 std::vector<std::pair<Vec3d, Vec3d>> linesToDraw;
 
                 // Drawing axis
-                float axisLength = 1.0f;
-                Vec3d origin = { 0.0f, 0.0f, 0.0f };
-                Vec3d xDir = { 1.0f, 0.0f, 0.0f };
-                Vec3d yDir = { 0.0f, 1.0f, 0.0f };
-                Vec3d zDir = { 0.0f, 0.0f, 1.0f };
+                float axisLength = 1;
+                Vec3d origin = { 0, 0, 0 };
+                Vec3d xDir = { 1, 0, 0 };
+                Vec3d yDir = { 0, 1, 0 };
+                Vec3d zDir = { 0, 0, 1 };
                 origin = matWorld * origin;
                 xDir = matWorld * xDir * axisLength;
                 yDir = matWorld * yDir * axisLength;
@@ -191,11 +191,11 @@ class Video3DEngine : public GameEngine {
                         //linesToDraw.push_back({ p1, p2 });
 
                         // Illumination
-                        Vec3d light_direction = { 0.0f, 1.0f, -1.0f };
+                        Vec3d light_direction = { 0, 1, -1 };
                         light_direction.normalize();
                         
                         float dp = std::max(0.1f, normal.dot(light_direction));
-                        int b = dp * 255 + 0.5f; // brightness
+                        int b = dp * 255 + 0.5; // brightness
 
                         uint32_t shade = (b << 16) + (b << 8) + b;
                         triTransformed.col = shade;
@@ -207,8 +207,8 @@ class Video3DEngine : public GameEngine {
 
                 // Sort Triangles from back to front
                 sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](Triangle &t1, Triangle &t2) {
-                    float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
-                    float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
+                    float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3;
+                    float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3;
 
                     return z1 > z2;
                 });
@@ -225,11 +225,11 @@ class Video3DEngine : public GameEngine {
                     triangle.p[2] /= triangle.p[2].w;
 
 					// X/Y are inverted so put them back
-                    //triangle *= { -1.0f, -1.0f, 0.0f };
+                    //triangle *= { -1, -1, 0 };
 
                     // Scale into view
-                    triangle += Vec3d(1.0f, 1.0f, 0.0f);
-                    triangle *= Vec3d(0.5f * (float) WIDTH, 0.5f * (float) HEIGHT, 1.0f);
+                    triangle += Vec3d(1, 1, 0);
+                    triangle *= Vec3d(0.5 * (float) WIDTH, 0.5 * (float) HEIGHT, 1);
 
                     // Rasterize Triangle
                     renderer.FillTriangle(triangle);
@@ -255,10 +255,10 @@ class Video3DEngine : public GameEngine {
                     //p2 *= { -1.0f, -1.0f, 0.0f };
 
                     // Scale into view
-                    p1 += Vec3d(1.0f, 1.0f, 0.0f);
-                    p2 += Vec3d(1.0f, 1.0f, 0.0f);
-                    p1 *= Vec3d(0.5f * (float) WIDTH, 0.5f * (float) HEIGHT, 1.0f);
-                    p2 *= Vec3d(0.5f * (float) WIDTH, 0.5f * (float) HEIGHT, 1.0f);
+                    p1 += Vec3d(1, 1, 0);
+                    p2 += Vec3d(1, 1, 0);
+                    p1 *= Vec3d(0.5 * (float) WIDTH, 0.5 * (float) HEIGHT, 1);
+                    p2 *= Vec3d(0.5 * (float) WIDTH, 0.5 * (float) HEIGHT, 1);
 
                     renderer.DrawLine(p1, p2, GREEN);
                 }
