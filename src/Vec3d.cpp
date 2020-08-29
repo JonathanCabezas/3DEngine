@@ -18,13 +18,13 @@ struct Vec3d {
         w = 1;
     }
 
-	static Vec3d IntersectPlane(Vec3d &plane_p, Vec3d &plane_n, Vec3d &lineStart, Vec3d &lineEnd)
+	static Vec3d IntersectPlane(Vec3d &plane_p, Vec3d &plane_n, Vec3d &lineStart, Vec3d &lineEnd, float &t)
 	{
 		plane_n.normalize();
 		float plane_d = plane_n.dot(plane_p);
 		float ad = lineStart.dot(plane_n);
 		float bd = lineEnd.dot(plane_n);
-		float t = (plane_d - ad) / (bd - ad);
+		t = (plane_d - ad) / (bd - ad);
 		Vec3d lineStartToEnd = lineEnd - lineStart;
 		Vec3d lineToIntersect = lineStartToEnd * t;
 		return lineStart + lineToIntersect;
@@ -133,6 +133,7 @@ struct Vec3d {
 
     Vec3d operator +(const Vec3d& b) const {
         Vec3d r;
+
         r.x = x + b.x;
         r.y = y + b.y;
         r.z = z + b.z;
@@ -142,6 +143,7 @@ struct Vec3d {
 
     Vec3d operator -(const Vec3d& b) const {
         Vec3d r;
+
         r.x = x - b.x;
         r.y = y - b.y;
         r.z = z - b.z;
@@ -151,6 +153,7 @@ struct Vec3d {
 
     Vec3d operator +(const float b) const {
         Vec3d r;
+
         r.x = x + b;
         r.y = y + b;
         r.z = z + b;
@@ -160,6 +163,7 @@ struct Vec3d {
 
     Vec3d operator -(const float b) const {
         Vec3d r;
+
         r.x = x - b;
         r.y = y - b;
         r.z = z - b;
@@ -169,6 +173,7 @@ struct Vec3d {
 
     Vec3d operator *(const float b) const {
         Vec3d r;
+
         r.x = x * b;
         r.y = y * b;
         r.z = z * b;
@@ -178,6 +183,7 @@ struct Vec3d {
 
     Vec3d operator /(const float b) const {
         Vec3d r;
+
         r.x = x / b;
         r.y = y / b;
         r.z = z / b;

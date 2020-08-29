@@ -46,7 +46,7 @@ class Video3DEngine : public GameEngine {
 
             fTheta = 0;
 
-            mesh.LoadFromObjectFile("models/teapot.obj");
+            mesh.LoadFromObjectFile("models/mountains.obj");
 
             // Initializing Movement
             fYaw = 0;
@@ -140,7 +140,7 @@ class Video3DEngine : public GameEngine {
 
                 renderer.Fill(BLACK);
 
-                fTheta += 1 * fElapsedTime;
+                //fTheta += 1 * fElapsedTime;
 
                 matRotX = Mat4x4::MakeRotationX(fTheta * 0.5);
                 matRotZ = Mat4x4::MakeRotationZ(fTheta);
@@ -188,11 +188,6 @@ class Video3DEngine : public GameEngine {
                     Vec3d normal = triTransformed.normal();
 
                     if (normal.dot(vCameraRay) < 0.0f) {
-                        // Adding normals to draw list
-                        //Vec3d p1 = triTransformed.center();
-                        //Vec3d p2 = p1 + normal * 2;
-                        //linesToDraw.push_back({ p1, p2 });
-
                         // Illumination
                         Vec3d light_direction = { 0, 1, -1 };
                         light_direction.normalize();
@@ -213,6 +208,7 @@ class Video3DEngine : public GameEngine {
                         nClippedTriangles = triViewed.clipAgainstPlane({ 0.0f, 0.0f, 0.1f }, { 0.0f, 0.0f, 1.0f }, clipped[0], clipped[1]);
 
                         for (int n = 0; n < nClippedTriangles; n++) {
+
                             triProjected = matProj * clipped[n];
                             triProjected.p[0] /= triProjected.p[0].w;
                             triProjected.p[1] /= triProjected.p[1].w;
@@ -281,7 +277,7 @@ class Video3DEngine : public GameEngine {
                     for (auto &triangle : listTriangles) {
                         // Rasterize Triangle
                         renderer.FillTriangle(triangle);
-                        renderer.DrawTriangle(triangle, RED);
+                        //renderer.DrawTriangle(triangle, RED);
                     }
                 }
 

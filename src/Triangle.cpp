@@ -1,11 +1,13 @@
 #ifndef _TRIANGLE
 #define _TRIANGLE
 
+#include "Vec2d.cpp"
 #include "Vec3d.cpp"
 #include <stdint.h>
 
 struct Triangle {
     Vec3d p[3];
+    Vec2d t[3];
     uint32_t col;
 
     Triangle() {
@@ -23,6 +25,11 @@ struct Triangle {
         Triangle r;
 
         r.col = col;
+
+        r.t[0] = t[0];
+        r.t[1] = t[1];
+        r.t[2] = t[2];
+
         r.p[0] = p[0] + b;
         r.p[1] = p[1] + b;
         r.p[2] = p[2] + b;
@@ -85,23 +92,38 @@ struct Triangle {
             int nInsidePointCount = 0;
             int nOutsidePointCount = 0;
 
+            Vec2d* inside_tex[3];
+            Vec2d* outside_tex[3];
+            int nInsideTexCount = 0;
+            int nOutsideTexCount = 0;
+            
+            // To store the parameter to get to the intersection
+            float par;
+
             // Get signed distance of each point in triangle to plane
             float d0 = dist(p[0]);
             float d1 = dist(p[1]);
             float d2 = dist(p[2]);
 
-            if (d0 >= 0)
+            if (d0 >= 0) {
                 inside_points[nInsidePointCount++] = &p[0];
-            else
+                inside_tex[nInsideTexCount++] = &t[0];
+            } else {
                 outside_points[nOutsidePointCount++] = &p[0];
-            if (d1 >= 0)
+                outside_tex[nOutsideTexCount++] = &t[0];
+            } if (d1 >= 0) {
                 inside_points[nInsidePointCount++] = &p[1];
-            else
+                inside_tex[nInsideTexCount++] = &t[1];
+            } else {
                 outside_points[nOutsidePointCount++] = &p[1];
-            if (d2 >= 0)
+                outside_tex[nOutsideTexCount++] = &t[1];
+            } if (d2 >= 0) {
                 inside_points[nInsidePointCount++] = &p[2];
-            else
+                inside_tex[nInsideTexCount++] = &t[2];
+            } else {
                 outside_points[nOutsidePointCount++] = &p[2];
+                outside_tex[nOutsideTexCount++] = &t[2];
+            }
 
             // Now classify triangle points, and break the input triangle into 
             // smaller output triangles if required. There are four possible
@@ -131,14 +153,19 @@ struct Triangle {
 
                 // Copy appearance info to new triangle
                 out_tri1.col =  col;
+                //out_tri1.col =  0x0000ff;
 
                 // The inside point is valid, so keep that...
                 out_tri1.p[0] = *inside_points[0];
+                out_tri1.t[0] = *inside_tex[0];
 
                 // but the two new points are at the locations where the 
                 // original sides of the triangle (lines) intersect with the plane
-                out_tri1.p[1] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0]);
-                out_tri1.p[2] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[1]);
+                out_tri1.p[1] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0], par);
+                out_tri1.t[1] = *inside_tex[0] + (*outside_tex[0] - *inside_tex[0]) * par;
+
+                out_tri1.p[2] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[1], par);
+                out_tri1.t[2] = *inside_tex[0] + (*outside_tex[1] - *inside_tex[0]) * par;
 
                 return 1; // Return the newly formed single triangle
             }
@@ -152,20 +179,32 @@ struct Triangle {
                 // Copy appearance info to new triangles
                 out_tri1.col =  col;
                 out_tri2.col =  col;
+                //out_tri1.col =  0x008000;
+                //out_tri2.col =  0xcf0000
 
                 // The first triangle consists of the two inside points and a new
                 // point determined by the location where one side of the triangle
                 // intersects with the plane
                 out_tri1.p[0] = *inside_points[0];
+                out_tri1.t[0] = *inside_tex[0];
+
                 out_tri1.p[1] = *inside_points[1];
-                out_tri1.p[2] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0]);
+                out_tri1.t[1] = *inside_tex[1];
+
+                out_tri1.p[2] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[0], *outside_points[0], par);
+                out_tri1.t[2] = *inside_tex[0] + (*outside_tex[0] - *inside_tex[0]) * par;
 
                 // The second triangle is composed of one of he inside points, a
                 // new point determined by the intersection of the other side of the 
                 // triangle and the plane, and the newly created point above
                 out_tri2.p[0] = *inside_points[1];
-                out_tri2.p[1] = out_tri1.p[2];
-                out_tri2.p[2] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[1], *outside_points[0]);
+                out_tri1.t[0] = *inside_tex[0];
+
+                out_tri2.p[1] = Vec3d::IntersectPlane(plane_p, plane_n, *inside_points[1], *outside_points[0], par);
+                out_tri1.t[1] = *inside_tex[1] + (*outside_tex[0] - *inside_tex[1]) * par;
+
+                out_tri2.p[2] = out_tri1.p[2];
+                out_tri1.t[2] = out_tri1.t[2];
 
                 return 2; // Return two newly formed triangles which form a quad
             }

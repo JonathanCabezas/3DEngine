@@ -171,6 +171,11 @@ struct Mat4x4 {
         Triangle r;
 
         r.col = b.col;
+
+        r.t[0] = b.t[0];
+        r.t[1] = b.t[1];
+        r.t[2] = b.t[2];
+
         r.p[0] = *this * b.p[0];
         r.p[1] = *this * b.p[1];
         r.p[2] = *this * b.p[2];
