@@ -18,6 +18,18 @@ struct Vec3d {
         w = 1;
     }
 
+	static Vec3d IntersectPlane(Vec3d &plane_p, Vec3d &plane_n, Vec3d &lineStart, Vec3d &lineEnd)
+	{
+		plane_n.normalize();
+		float plane_d = plane_n.dot(plane_p);
+		float ad = lineStart.dot(plane_n);
+		float bd = lineEnd.dot(plane_n);
+		float t = (plane_d - ad) / (bd - ad);
+		Vec3d lineStartToEnd = lineEnd - lineStart;
+		Vec3d lineToIntersect = lineStartToEnd * t;
+		return lineStart + lineToIntersect;
+	}
+
     float length() const {
         return sqrtf(x * x + y * y + z * z);
     }

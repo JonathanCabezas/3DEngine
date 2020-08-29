@@ -48,7 +48,7 @@ struct Mat4x4 {
         Mat4x4 mat;
 
         mat.m[0][0] = cosf(fAngleRad);
-        mat.m[0][1] = sinf(fAngleRad); // switch both signs there
+        mat.m[0][1] = sinf(fAngleRad); // switch both signs there to invert rotation
         mat.m[1][0] = -sinf(fAngleRad);
         mat.m[1][1] = cosf(fAngleRad);
         mat.m[2][2] = 1;

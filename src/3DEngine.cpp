@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include <list>
 
 #include "Vec3d.cpp"
 #include "Mesh.cpp"
@@ -40,12 +41,12 @@ class Video3DEngine : public GameEngine {
         bool OnCreate() override {
             fFovDegrees = 90;
             fAspectRatio = (float) HEIGHT / (float) WIDTH;
-            fNear = 0;
+            fNear = 0.1f;
             fFar = 1000;
 
             fTheta = 0;
 
-            mesh.LoadFromObjectFile("models/axis.obj");
+            mesh.LoadFromObjectFile("models/teapot.obj");
 
             // Initializing Movement
             fYaw = 0;
@@ -65,10 +66,10 @@ class Video3DEngine : public GameEngine {
         bool OnKeyPressed(SDL_Keycode kc) {
             switch(kc) {
                 case SDLK_LEFT:
-                    vVel.x = fLateralSpeed;
+                    vVel.x = -fLateralSpeed;
                     break;
                 case SDLK_RIGHT:
-                    vVel.x = -fLateralSpeed;
+                    vVel.x = fLateralSpeed;
                     break;
                 case SDLK_UP:
                     vVel.y = fLateralSpeed;
@@ -84,10 +85,10 @@ class Video3DEngine : public GameEngine {
                     vVel.z = -fForwardSpeed;
                     break;
                 case SDLK_q:
-                    fYawVel = -fYawSpeed;
+                    fYawVel = fYawSpeed;
                     break;
                 case SDLK_d:
-                    fYawVel = fYawSpeed;
+                    fYawVel = -fYawSpeed;
                     break;
                 default:
                     break;
@@ -139,9 +140,9 @@ class Video3DEngine : public GameEngine {
 
                 renderer.Fill(BLACK);
 
-                //fTheta += 1 * fElapsedTime;
+                fTheta += 1 * fElapsedTime;
 
-                matRotX = Mat4x4::MakeRotationX(fTheta * 0);
+                matRotX = Mat4x4::MakeRotationX(fTheta * 0.5);
                 matRotZ = Mat4x4::MakeRotationZ(fTheta);
                 matTrans = Mat4x4::MakeTranslation(0, 0, 8);
                 matWorld = matRotZ * matRotX * matTrans;
@@ -161,18 +162,20 @@ class Video3DEngine : public GameEngine {
                 std::vector<std::pair<Vec3d, Vec3d>> linesToDraw;
 
                 // Drawing axis
-                float axisLength = 1;
+                float axisLength = 2;
                 Vec3d origin = { 0, 0, 0 };
                 Vec3d xDir = { 1, 0, 0 };
                 Vec3d yDir = { 0, 1, 0 };
                 Vec3d zDir = { 0, 0, 1 };
                 origin = matWorld * origin;
-                xDir = matWorld * xDir * axisLength;
-                yDir = matWorld * yDir * axisLength;
-                zDir = matWorld * zDir * axisLength;
-                linesToDraw.push_back({ origin, xDir });
-                linesToDraw.push_back({ origin, yDir });
-                linesToDraw.push_back({ origin, zDir });
+                xDir = matWorld * (xDir * axisLength);
+                yDir = matWorld * (yDir * axisLength);
+                zDir = matWorld * (zDir * axisLength);
+                //Vec3d vCameraRay = origin - vCamera;
+
+                //linesToDraw.push_back({ origin, xDir });
+                //linesToDraw.push_back({ origin, yDir });
+                //linesToDraw.push_back({ origin, zDir });
 
                 // Draw Triangles
                 for (auto tri : mesh.tris) {
@@ -186,8 +189,8 @@ class Video3DEngine : public GameEngine {
 
                     if (normal.dot(vCameraRay) < 0.0f) {
                         // Adding normals to draw list
-                        Vec3d p1 = triTransformed.center();
-                        Vec3d p2 = p1 + normal;
+                        //Vec3d p1 = triTransformed.center();
+                        //Vec3d p2 = p1 + normal * 2;
                         //linesToDraw.push_back({ p1, p2 });
 
                         // Illumination
@@ -200,8 +203,28 @@ class Video3DEngine : public GameEngine {
                         uint32_t shade = (b << 16) + (b << 8) + b;
                         triTransformed.col = shade;
 
-                        // Store Triangles for sorting
-                        vecTrianglesToRaster.push_back(triTransformed);
+                        // Convert World Space --> View Space
+                        triViewed = matView * triTransformed;
+
+                        // Clip Viewed Triangle against near plane, this could form two additional
+                        // additional triangles. 
+                        int nClippedTriangles = 0;
+                        Triangle clipped[2];
+                        nClippedTriangles = triViewed.clipAgainstPlane({ 0.0f, 0.0f, 0.1f }, { 0.0f, 0.0f, 1.0f }, clipped[0], clipped[1]);
+
+                        for (int n = 0; n < nClippedTriangles; n++) {
+                            triProjected = matProj * clipped[n];
+                            triProjected.p[0] /= triProjected.p[0].w;
+                            triProjected.p[1] /= triProjected.p[1].w;
+                            triProjected.p[2] /= triProjected.p[2].w;
+
+                            // Scale into view
+                            triProjected += Vec3d(1, 1, 0);
+                            triProjected *= Vec3d(0.5 * (float) WIDTH, 0.5 * (float) HEIGHT, 1);
+
+                            // Store Triangles for sorting
+                            vecTrianglesToRaster.push_back(triProjected);
+                        }
                     }
                 }
 
@@ -213,27 +236,53 @@ class Video3DEngine : public GameEngine {
                     return z1 > z2;
                 });
 
-                for (auto &triangle : vecTrianglesToRaster) {
-                    // Convert World Space --> View Space
-                    triangle = matView * triangle;
+                for (auto &triToRaster : vecTrianglesToRaster) {
+                    // Clip triangles against all four screen edges, this could yield
+                    // a bunch of triangles, so create a queue that we traverse to 
+                    //  ensure we only test new triangles generated against planes
+                    Triangle clipped[2];
+                    std::list<Triangle> listTriangles;
 
-                    // Projecting into 2D View
-                    triangle = matProj * triangle;
+                    // Add initial triangle
+                    listTriangles.push_back(triToRaster);
+                    int nNewTriangles = 1;
 
-                    triangle.p[0] /= triangle.p[0].w;
-                    triangle.p[1] /= triangle.p[1].w;
-                    triangle.p[2] /= triangle.p[2].w;
+                    for (int p = 0; p < 4; p++) {
+                        int nTrisToAdd = 0;
+                        while (nNewTriangles > 0) {
+                            // Take triangle from front of queue
+                            Triangle test = listTriangles.front();
+                            listTriangles.pop_front();
+                            nNewTriangles--;
 
-					// X/Y are inverted so put them back
-                    //triangle *= { -1, -1, 0 };
+                            // Clip it against a plane. We only need to test each 
+                            // subsequent plane, against subsequent new triangles
+                            // as all triangles after a plane clip are guaranteed
+                            // to lie on the inside of the plane. I like how this
+                            // comment is almost completely and utterly justified
+                            switch (p) {
+                                case 0:	nTrisToAdd = test.clipAgainstPlane({ 0, 0, 0 }, { 0, 1, 0 }, clipped[0], clipped[1]); break;
+                                case 1:	nTrisToAdd = test.clipAgainstPlane({ 0, (float)HEIGHT - 1, 0 }, { 0, -1, 0 }, clipped[0], clipped[1]); break;
+                                case 2:	nTrisToAdd = test.clipAgainstPlane({ 0, 0, 0 }, { 1, 0, 0 }, clipped[0], clipped[1]); break;
+                                case 3:	nTrisToAdd = test.clipAgainstPlane({ (float)WIDTH - 1, 0, 0 }, { -1, 0, 0 }, clipped[0], clipped[1]); break;
+                            }
 
-                    // Scale into view
-                    triangle += Vec3d(1, 1, 0);
-                    triangle *= Vec3d(0.5 * (float) WIDTH, 0.5 * (float) HEIGHT, 1);
+                            // Clipping may yield a variable number of triangles, so
+                            // add these new ones to the back of the queue for subsequent
+                            // clipping against next planes
+                            for (int w = 0; w < nTrisToAdd; w++)
+                                listTriangles.push_back(clipped[w]);
+                        }
+                        nNewTriangles = listTriangles.size();
+                    }
 
-                    // Rasterize Triangle
-                    renderer.FillTriangle(triangle);
-                    //renderer.DrawTriangle(triangle, RED);
+
+                    // Draw the transformed, viewed, clipped, projected, sorted, clipped triangles
+                    for (auto &triangle : listTriangles) {
+                        // Rasterize Triangle
+                        renderer.FillTriangle(triangle);
+                        renderer.DrawTriangle(triangle, RED);
+                    }
                 }
 
                 for (auto &line : linesToDraw) {
@@ -249,10 +298,6 @@ class Video3DEngine : public GameEngine {
                     p2 = matProj * p2;
                     p1 /= p1.w;
                     p2 /= p2.w;
-
-					// X/Y are inverted so put them back
-                    //p1 *= { -1, -1, 0 };
-                    //p2 *= { -1, -1, 0 };
 
                     // Scale into view
                     p1 += Vec3d(1, 1, 0);
